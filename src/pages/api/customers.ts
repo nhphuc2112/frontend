@@ -3,10 +3,6 @@ import { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCu
 
 const API_TOKEN = process.env.API_TOKEN;
 
-// Ghi nhật ký cấu hình API token
-console.log('API Token được cấu hình:', !!API_TOKEN);
-console.log('Giá trị API Token:', API_TOKEN);
-
 // Định nghĩa kiểu dữ liệu Customer
 type Customer = {
   id: string;
@@ -14,6 +10,7 @@ type Customer = {
   email: string;
   phone: string;
   address?: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -21,11 +18,65 @@ type Customer = {
 // Cơ sở dữ liệu giả (thay thế bằng cơ sở dữ liệu thực tế trong môi trường sản xuất)
 let customers: Customer[] = [];
 
+// Sample data for customers
+const sampleCustomers = [
+    {
+        id: "1",
+        name: "John Doe",
+        email: "john.doe@example.com",
+        phone: "+1234567890",
+        address: "123 Main St, City",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "2",
+        name: "Jane Smith",
+        email: "jane.smith@example.com",
+        phone: "+1987654321",
+        address: "456 Oak Ave, Town",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "3",
+        name: "Robert Johnson",
+        email: "robert.j@example.com",
+        phone: "+1122334455",
+        address: "789 Pine Rd, Village",
+        status: "inactive",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "4",
+        name: "Maria Garcia",
+        email: "maria.g@example.com",
+        phone: "+5544332211",
+        address: "321 Elm St, Borough",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "5",
+        name: "David Wilson",
+        email: "david.w@example.com",
+        phone: "+6677889900",
+        address: "654 Maple Dr, District",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }
+];
+
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Kiểm tra xem API_TOKEN đã được cấu hình chưa
   if (!API_TOKEN) {
-    console.error("❌ API_TOKEN chưa được cấu hình!");
-    return res.status(500).json({ message: "Ối giời ơi! Máy chủ quên cài API_TOKEN rồi!" });
+    console.error("❌ API_TOKEN not configured!");
+    return res.status(500).json({ message: "Server configuration error: API_TOKEN not set" });
   }
   // Thiết lập các header CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -48,7 +99,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     case "DELETE":
       return handleDelete(req, res);
     default:
-      return res.status(405).json({ message: "Phương thức này không chơi được đâu nha!" });
+      return res.status(405).json({ message: "Method not allowed" });
   }
 }
 
@@ -57,47 +108,45 @@ function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   
   if (id) {
-    const customer = getCustomerById(id as string);
+    const customer = getCustomerById(String(id));
     if (!customer) {
-      return res.status(404).json({ message: "Không tìm thấy khách hàng nào, chắc đi lạc rồi!" });
+      return res.status(404).json({ message: "Customer not found" });
     }
     return res.status(200).json(customer);
   }
   
-  return res.status(200).json(getCustomers());
+  // Return sample data if no customers in database
+  const customers = getCustomers();
+  if (customers.length === 0) {
+    return res.status(200).json(sampleCustomers);
+  }
+  
+  return res.status(200).json(customers);
 }
 
 // POST /api/customers
 function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const { name, email, phone, address, status } = req.body;
 
-  console.log('Dữ liệu khách hàng nhận được:', req.body);
+  if (!name || !email || !phone || !address || !status) {
+    return res.status(400).json({ 
+      message: "Missing required fields",
+      required: ["name", "email", "phone", "address", "status"]
+    });
+  }
 
-  if (!name) {
-    return res.status(400).json({ message: "Tên đâu rồi? Không có tên thì ai biết là ai!" });
-  }
-  if (!email) {
-    return res.status(400).json({ message: "Email đâu? Không có email thì gửi thư kiểu gì?" });
-  }
-  if (!phone) {
-    return res.status(400).json({ message: "Số điện thoại đâu? Không có số thì gọi kiểu gì?" });
-  }
-  if (!address) {
-    return res.status(400).json({ message: "Địa chỉ đâu? Không có địa chỉ thì ship kiểu gì?" });
-  }
-  if (!status) {
-    return res.status(400).json({ message: "Trạng thái đâu? Không có trạng thái thì biết sống hay nghỉ?" });
-  }
   if (!['active', 'inactive'].includes(status)) {
-    return res.status(400).json({ message: "Trạng thái gì lạ vậy? Chỉ nhận 'active' hoặc 'inactive' thôi nha!" });
+    return res.status(400).json({ message: "Invalid status" });
   }
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: "Email nhìn sai sai, kiểm tra lại đi!" });
+    return res.status(400).json({ message: "Invalid email format" });
   }
+
   const phoneRegex = /^\+?[\d\s-]{10,}$/;
   if (!phoneRegex.test(phone)) {
-    return res.status(400).json({ message: "Số điện thoại gì lạ vậy? Nhập lại cho đúng nha!" });
+    return res.status(400).json({ message: "Invalid phone format" });
   }
 
   try {
@@ -106,14 +155,15 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
       email,
       phone,
       address,
-      status,
+      status
     });
 
-    console.log('Đã tạo khách hàng mới:', newCustomer);
     return res.status(201).json(newCustomer);
   } catch (error) {
-    console.error('Lỗi khi tạo khách hàng:', error);
-    return res.status(500).json({ message: "Ối giời ơi! Tạo khách hàng thất bại rồi!" });
+    console.error('Error creating customer:', error);
+    return res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create customer"
+    });
   }
 }
 
@@ -123,27 +173,33 @@ function handlePut(req: NextApiRequest, res: NextApiResponse) {
   const { name, email, phone, address, status } = req.body;
 
   if (!id) {
-    return res.status(400).json({ message: "ID khách hàng đâu? Không có ID thì sửa kiểu gì?" });
+    return res.status(400).json({ message: "Customer ID is required" });
   }
 
-  // Kiểm tra giá trị trạng thái nếu được cung cấp
   if (status && !['active', 'inactive'].includes(status)) {
-    return res.status(400).json({ message: "Trạng thái gì lạ vậy? Chỉ nhận 'active' hoặc 'inactive' thôi nha!" });
+    return res.status(400).json({ message: "Invalid status" });
   }
 
-  const updatedCustomer = updateCustomer(id as string, {
-    name,
-    email,
-    phone,
-    address,
-    status,
-  });
+  try {
+    const updatedCustomer = updateCustomer(id as string, {
+      ...(name && { name }),
+      ...(email && { email }),
+      ...(phone && { phone }),
+      ...(address && { address }),
+      ...(status && { status })
+    });
 
-  if (!updatedCustomer) {
-    return res.status(404).json({ message: "Không tìm thấy khách hàng nào để sửa, chắc đi lạc rồi!" });
+    if (!updatedCustomer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    return res.status(200).json(updatedCustomer);
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    return res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to update customer"
+    });
   }
-
-  return res.status(200).json(updatedCustomer);
 }
 
 // DELETE /api/customers
@@ -151,13 +207,13 @@ function handleDelete(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   if (!id) {
-    return res.status(400).json({ message: "ID khách hàng đâu? Không có ID thì xóa kiểu gì?" });
+    return res.status(400).json({ message: "Customer ID is required" });
   }
 
   const deleted = deleteCustomer(id as string);
   if (!deleted) {
-    return res.status(404).json({ message: "Không tìm thấy khách hàng nào để xóa, chắc đi lạc rồi!" });
+    return res.status(404).json({ message: "Customer not found" });
   }
 
-  return res.status(200).json({ message: "Xóa khách hàng thành công, bye bye nha!" });
+  return res.status(200).json({ message: "Customer deleted successfully" });
 }

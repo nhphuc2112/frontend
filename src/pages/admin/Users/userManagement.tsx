@@ -25,8 +25,13 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: 'admin' | 'user';
+  password: string;
+  role: 'admin' | 'receptionist' | 'housekeeper' | 'manager' | 'maintenance';
+  firstName: string;
+  lastName: string;
+  phone: string;
   status: 'active' | 'inactive';
+  lastLogin: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,12 +42,6 @@ const UserManagement: React.FC = () => {
   const [form] = Form.useForm();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Debug environment variables
-  useEffect(() => {
-    console.log('API Token available:', !!process.env.NEXT_PUBLIC_API_TOKEN);
-    console.log('API Token value:', process.env.NEXT_PUBLIC_API_TOKEN);
-  }, []);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -186,9 +185,19 @@ const UserManagement: React.FC = () => {
       key: 'username',
     },
     {
+      title: 'Name',
+      key: 'name',
+      render: (_, record) => `${record.firstName} ${record.lastName}`,
+    },
+    {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phone',
+      key: 'phone',
     },
     {
       title: 'Role',
@@ -211,9 +220,9 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: 'Created At',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: 'Last Login',
+      dataIndex: 'lastLogin',
+      key: 'lastLogin',
       render: (text) => new Date(text).toLocaleString(),
     },
     {
@@ -287,6 +296,22 @@ const UserManagement: React.FC = () => {
             </Form.Item>
 
             <Form.Item
+              name="firstName"
+              label="First Name"
+              rules={[{ required: true, message: 'Please input first name!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="lastName"
+              label="Last Name"
+              rules={[{ required: true, message: 'Please input last name!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
               name="email"
               label="Email"
               rules={[
@@ -298,13 +323,32 @@ const UserManagement: React.FC = () => {
             </Form.Item>
 
             <Form.Item
+              name="phone"
+              label="Phone"
+              rules={[{ required: true, message: 'Please input phone number!' }]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[{ required: !editingUser, message: 'Please input password!' }]}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <Form.Item
               name="role"
               label="Role"
               rules={[{ required: true, message: 'Please select role!' }]}
             >
               <Select>
                 <Option value="admin">Admin</Option>
-                <Option value="user">User</Option>
+                <Option value="receptionist">Receptionist</Option>
+                <Option value="housekeeper">Housekeeper</Option>
+                <Option value="manager">Manager</Option>
+                <Option value="maintenance">Maintenance</Option>
               </Select>
             </Form.Item>
 

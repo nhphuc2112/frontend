@@ -1,4 +1,10 @@
-import { useEffect, useState, ReactNode, Dispatch, SetStateAction } from "react";
+import {
+  useEffect,
+  useState,
+  ReactNode,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import { Menu, message, Badge } from "antd";
 import type { MenuProps } from "antd";
 import dynamic from "next/dynamic";
@@ -12,13 +18,35 @@ import {
   SettingOutlined,
   LineChartOutlined,
 } from "@ant-design/icons";
+import BookingsManagement from "@/src/pages/admin/Booking/bookingsManagement";
 
-const UsersManagement = dynamic(() => import("@/src/pages/admin/Users/userManagement"), { ssr: false });
-const CustomersManagement = dynamic(() => import("@/src/pages/admin/Customers/customersManagement"), { ssr: false });
-const Dashboards = dynamic(() => import("@/src/pages/admin/dashboards"), { ssr: false });
-const ServicesManagement = dynamic(() => import("@/src/pages/admin/Services/servicesManagement"), {ssr: false});
-const InvoiceManagement = dynamic(() => import("@/src/pages/admin/Invoices/invoiceManagement"), {ssr: false});
-
+const UsersManagement = dynamic(
+  () => import("@/src/pages/admin/Users/userManagement"),
+  { ssr: false }
+);
+const CustomersManagement = dynamic(
+  () => import("@/src/pages/admin/Customers/customersManagement"),
+  { ssr: false }
+);
+const Dashboards = dynamic(() => import("@/src/pages/admin/dashboards"), {
+  ssr: false,
+});
+const ServicesManagement = dynamic(
+  () => import("@/src/pages/admin/Services/servicesManagement"),
+  { ssr: false }
+);
+const InvoiceManagement = dynamic(
+  () => import("@/src/pages/admin/Invoices/invoiceManagement"),
+  { ssr: false }
+);
+const RoomManagement = dynamic(
+  () => import("@/src/pages/admin/Room/roomManagement"),
+  { ssr: false }
+);
+const RoomBookings = dynamic(
+  () => import("@/src/pages/admin/Booking/bookingsManagement"),
+  { ssr: false }
+);
 type MenuItem = {
   key: string;
   label: string;
@@ -77,7 +105,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ setActiveComponent }) => {
 
       switch (e.key) {
         case "999":
-          setActiveComponent(<Dashboards/>)
+          setActiveComponent(<Dashboards />);
           break;
         case "1":
           setActiveComponent(<CustomersManagement />);
@@ -86,19 +114,21 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ setActiveComponent }) => {
           setActiveComponent(<UsersManagement />);
           break;
         case "5":
-          message.info("Rooms Management component will be implemented soon");
+          setActiveComponent(<RoomManagement />);
           break;
         case "6":
-          message.info("Rooms Booking component will be implemented soon");
+          setActiveComponent(<BookingsManagement />);
           break;
         case "9":
           setActiveComponent(<ServicesManagement />);
           break;
         case "10":
-          setActiveComponent(<InvoiceManagement/>);
+          setActiveComponent(<InvoiceManagement />);
           break;
         case "11":
-          message.info("Analytics Management component will be implemented soon");
+          message.info(
+            "Analytics Management component will be implemented soon"
+          );
           break;
         case "12":
           message.info("Report Management component will be implemented soon");
@@ -108,7 +138,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ setActiveComponent }) => {
           break;
         case "14":
           message.info("Logging out...");
-          
+
           break;
         default:
           setActiveComponent(null);
@@ -141,7 +171,11 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ setActiveComponent }) => {
             <Badge
               count={item.badge}
               offset={[10, 0]}
-              style={{ width: "20px", margin: "5px 0 0 20px", fontSize: "10px" }}
+              style={{
+                width: "20px",
+                margin: "5px 0 0 20px",
+                fontSize: "10px",
+              }}
             >
               <span style={{ marginLeft: 5, marginRight: 10, color: "white" }}>
                 {item.label}
@@ -168,7 +202,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ setActiveComponent }) => {
         theme="dark"
         openKeys={openKeys}
         onOpenChange={handleOpenChange}
-        
         mode="inline"
         items={menuItems}
       />

@@ -13,9 +13,11 @@ import {
   Row,
   Col,
   Select,
+  Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+const { Option } = Select;
 
 const { Title } = Typography;
 
@@ -24,10 +26,10 @@ interface Customer {
   name: string;
   email: string;
   phone: string;
-  address?: string;
+  address: string;
+  status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
-  status: string;
 }
 
 const CustomersManagement: React.FC = () => {
@@ -37,13 +39,6 @@ const CustomersManagement: React.FC = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Debug environment variables
-  useEffect(() => {
-    console.log('API Token available:', !!process.env.NEXT_PUBLIC_API_TOKEN);
-    console.log('API Token value:', process.env.NEXT_PUBLIC_API_TOKEN);
-  }, []);
-
-  // Fetch customers
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -206,6 +201,16 @@ const CustomersManagement: React.FC = () => {
       key: 'address',
     },
     {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'active' ? 'green' : 'red'}>
+          {status.toUpperCase()}
+        </Tag>
+      ),
+    },
+    {
       title: 'Created At',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -303,8 +308,20 @@ const CustomersManagement: React.FC = () => {
             <Form.Item
               name="address"
               label="Address"
+              rules={[{ required: true, message: 'Please input customer address!' }]}
             >
               <Input.TextArea />
+            </Form.Item>
+
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true, message: 'Please select customer status!' }]}
+            >
+              <Select>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+              </Select>
             </Form.Item>
           </Form>
         </Modal>

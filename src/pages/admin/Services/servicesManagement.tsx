@@ -163,7 +163,10 @@ const ServiceManagement: React.FC = () => {
         const response = await fetch(`/api/services?id=${editingService.id}`, {
           method: 'PUT',
           headers,
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            status: values.status || 'available'
+          }),
         });
 
         if (!response.ok) {
@@ -177,7 +180,10 @@ const ServiceManagement: React.FC = () => {
         const response = await fetch('/api/services', {
           method: 'POST',
           headers,
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            status: values.status || 'available'
+          }),
         });
 
         if (!response.ok) {
@@ -224,7 +230,6 @@ const ServiceManagement: React.FC = () => {
       key: 'status',
       render: (status: string) => (
         <Tag color={status === 'available' ? 'green' : 'red'}>
-          {status.toUpperCase()}
         </Tag>
       ),
     },

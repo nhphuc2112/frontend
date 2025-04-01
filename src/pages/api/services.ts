@@ -3,6 +3,60 @@ import { getServices, getServiceById, createService, updateService, deleteServic
 
 const API_TOKEN = process.env.API_TOKEN;
 
+// Sample data for services
+const sampleServices = [
+    {
+        id: "1",
+        name: "Room Service",
+        description: "24/7 food and beverage delivery to your room",
+        price: 15.00,
+        category: "food",
+        status: "available",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "2",
+        name: "Laundry Service",
+        description: "Same-day laundry and dry cleaning service",
+        price: 25.00,
+        category: "housekeeping",
+        status: "available",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "3",
+        name: "Airport Transfer",
+        description: "Private car service to and from the airport",
+        price: 50.00,
+        category: "transportation",
+        status: "available",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "4",
+        name: "Spa Treatment",
+        description: "Relaxing massage and spa treatments",
+        price: 80.00,
+        category: "wellness",
+        status: "unavailable",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: "5",
+        name: "Tour Guide",
+        description: "Professional local tour guide service",
+        price: 100.00,
+        category: "activities",
+        status: "available",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }
+];
+
 // Debug API token configuration
 console.log('API Token configured:', !!API_TOKEN);
 console.log('API Token value:', API_TOKEN);
@@ -10,8 +64,8 @@ console.log('API Token value:', API_TOKEN);
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Check if API_TOKEN is configured
   if (!API_TOKEN) {
-    console.error("❌ CHua config t0ken kia ma!");
-    return res.status(500).json({ message: "Lỗi cấu hình máy chủ: API_TOKEN chưa được thiết lập" });
+    console.error("❌ API_TOKEN not configured!");
+    return res.status(500).json({ message: "Server configuration error: API_TOKEN not set" });
   }
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -32,7 +86,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     case "DELETE":
       return handleDelete(req, res);
     default:
-      return res.status(405).json({ message: "Phương thức không được phép" });
+      return res.status(405).json({ message: "Method not allowed" });
   }
 }
 
@@ -41,79 +95,100 @@ function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   
   if (id) {
-    const service = getServiceById(id as string);
+    const service = getServiceById(String(id));
     if (!service) {
-      return res.status(404).json({ message: "Dịch vụ không tồn tại" });
+      return res.status(404).json({ message: "Service not found" });
     }
     return res.status(200).json(service);
   }
   
-  return res.status(200).json(getServices());
+  // Return sample data if no services in database
+  const services = getServices();
+  if (services.length === 0) {
+    return res.status(200).json(sampleServices);
+  }
+  
+  return res.status(200).json(services);
 }
 
 // post services api
 function handlePost(req: NextApiRequest, res: NextApiResponse) {
-  const { name, description, price, category, status, imageUrl } = req.body;
+  const { name, description, price, category, status } = req.body;
 
   if (!name || !description || !price || !category || !status) {
-    return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
+    return res.status(400).json({ 
+      message: "Missing required fields",
+      required: ["name", "description", "price", "category", "status"]
+    });
   }
 
-  // Validate price
-  if (typeof price !== 'number' || price < 0) {
-    return res.status(400).json({ message: "Giá không hợp lệ" });
+  // Validate price is a number
+  if (isNaN(Number(price))) {
+    return res.status(400).json({ message: "Price must be a number" });
   }
 
   // Validate status
-  if (!['available', 'unavailable'].includes(status)) {
-    return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+  if (!["available", "unavailable"].includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
   }
 
-  const newService = createService({
-    name,
-    description,
-    price,
-    category,
-    status,
-    imageUrl,
-  });
+  try {
+    const newService = createService({
+      name,
+      description,
+      price: Number(price),
+      category,
+      status
+    });
 
-  return res.status(201).json(newService);
+    return res.status(201).json(newService);
+  } catch (error) {
+    console.error('Error creating service:', error);
+    return res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create service"
+    });
+  }
 }
 
 // PUT /api/services
 function handlePut(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  const { name, description, price, category, status, imageUrl } = req.body;
+  const { name, description, price, category, status } = req.body;
 
   if (!id) {
-    return res.status(400).json({ message: "Cần cung cấp ID dịch vụ" });
+    return res.status(400).json({ message: "Service ID is required" });
   }
 
   // Validate price if provided
-  if (price !== undefined && (typeof price !== 'number' || price < 0)) {
-    return res.status(400).json({ message: "Giá không hợp lệ" });
+  if (price && isNaN(Number(price))) {
+    return res.status(400).json({ message: "Price must be a number" });
   }
 
   // Validate status if provided
-  if (status && !['available', 'unavailable'].includes(status)) {
-    return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+  if (status && !["available", "unavailable"].includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
   }
 
-  const updatedService = updateService(id as string, {
-    name,
-    description,
-    price,
-    category,
-    status,
-    imageUrl,
-  });
+  try {
+    const updatedService = updateService(id as string, {
+      ...(name && { name }),
+      ...(description && { description }),
+      ...(price && { price: Number(price) }),
+      ...(category && { category }),
+      ...(status && { status })
+    });
 
-  if (!updatedService) {
-    return res.status(404).json({ message: "Dịch vụ không tồn tại" });
+    if (!updatedService) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    return res.status(200).json(updatedService);
+  } catch (error) {
+    console.error('Error updating service:', error);
+    return res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to update service"
+    });
   }
-
-  return res.status(200).json(updatedService);
 }
 
 // DELETE /api/services
@@ -121,13 +196,13 @@ function handleDelete(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   if (!id) {
-    return res.status(400).json({ message: "Cần cung cấp ID dịch vụ" });
+    return res.status(400).json({ message: "Service ID is required" });
   }
 
   const deleted = deleteService(id as string);
   if (!deleted) {
-    return res.status(404).json({ message: "Dịch vụ không tồn tại" });
+    return res.status(404).json({ message: "Service not found" });
   }
 
-  return res.status(200).json({ message: "Xóa dịch vụ thành công" });
+  return res.status(200).json({ message: "Service deleted successfully" });
 }
